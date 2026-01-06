@@ -991,3 +991,151 @@ h1 {
 .auth-message.auth-info {
     color: var(--text-muted);
 }
+
+
+/* --- Better mobile interactions --- */
+button,
+label[for],
+a {
+    -webkit-tap-highlight-color: transparent;
+    touch-action: manipulation;
+}
+
+/* --- Better modal scrolling (all screens) --- */
+.modal-content {
+    max-height: calc(100vh - 48px);
+    overflow: hidden;
+}
+
+.modal-body {
+    overflow-y: auto;
+    min-height: 0;
+    -webkit-overflow-scrolling: touch;
+}
+
+.modal-header,
+.modal-footer {
+    flex-shrink: 0;
+}
+
+.toast-container {
+    bottom: calc(22px + env(safe-area-inset-bottom));
+}
+
+/* --- Mobile refinements --- */
+@media (max-width: 520px) {
+    .app-container {
+        padding: 1rem;
+    }
+
+    .toolbar {
+        padding: 0.9rem;
+        border-radius: 18px;
+    }
+
+    .search-box {
+        padding: 0.55rem 0.65rem;
+    }
+
+    .header-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .header-note-actions,
+    .header-user-actions,
+    .header-auth-actions {
+        width: 100%;
+        justify-content: flex-start;
+    }
+
+    .header-note-actions > button,
+    .header-note-actions > label,
+    .header-auth-actions > button {
+        flex: 1 1 calc(50% - 0.75rem);
+    }
+
+    .user-chip {
+        flex: 1 1 auto;
+        max-width: 100%;
+    }
+
+    .toolbar-right {
+        width: 100%;
+        gap: 0.75rem;
+    }
+
+    .segmented {
+        width: 100%;
+    }
+
+    .seg-btn {
+        flex: 1;
+    }
+
+    .select {
+        width: 100%;
+    }
+
+    .note-count {
+        width: 100%;
+        text-align: left;
+    }
+
+    .notes-grid {
+        gap: 1rem;
+        padding-bottom: 2.5rem;
+    }
+
+    .note-card {
+        padding: 1.25rem;
+        border-radius: 20px;
+    }
+
+    .note-image {
+        height: 160px;
+    }
+
+    .modal-overlay {
+        align-items: flex-end;
+        padding: 0;
+    }
+
+    .modal-content {
+        width: 100%;
+        max-width: none;
+        border-radius: 18px 18px 0 0;
+        max-height: calc(100vh - 12px);
+    }
+
+    .modal-header {
+        padding: 1.1rem 1rem;
+    }
+
+    .modal-body {
+        padding: 1rem;
+    }
+
+    .modal-footer {
+        padding: 1rem;
+        padding-bottom: calc(1rem + env(safe-area-inset-bottom));
+    }
+
+    .toast-container {
+        bottom: calc(14px + env(safe-area-inset-bottom));
+    }
+}
+
+@media (hover: none) and (pointer: coarse) {
+    .note-card:hover {
+        transform: none;
+        box-shadow: none;
+    }
+
+    .btn-primary:hover,
+    .btn-secondary:hover,
+    .btn-danger:hover {
+        transform: none;
+        box-shadow: none;
+    }
+}
