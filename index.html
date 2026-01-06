@@ -1,0 +1,206 @@
+﻿<!doctype html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>灵感笔记</title>
+    <meta name="description" content="一个带登录与云端数据库的个人笔记网站：可设置公开/私密，公开内容只读。">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="logo-container">
+                <div class="logo-icon" aria-hidden="true">&#x1F4DD;</div>
+                <div class="logo-text">
+                    <h1>灵感笔记</h1>
+                    <div class="subtitle">可公开的云端笔记</div>
+                </div>
+            </div>
+
+            <div class="header-actions">
+                <div id="note-actions" class="header-note-actions hidden">
+                    <button id="export-btn" class="btn-secondary" type="button">导出</button>
+                    <label class="btn-secondary" for="import-file">导入</label>
+                    <input id="import-file" type="file" accept="application/json" hidden>
+                    <button id="clear-all-btn" class="btn-danger" type="button">清空</button>
+                    <button id="add-note-btn" class="btn-primary" type="button">
+                        <span class="icon" aria-hidden="true">+</span> 新建笔记
+                    </button>
+                </div>
+
+                <div id="user-actions" class="header-user-actions hidden">
+                    <button id="profile-btn" class="btn-secondary user-chip" type="button" aria-label="当前用户">
+                        <span class="user-name-prefix">你好，</span><span id="user-name">-</span>
+                    </button>
+                    <button id="signout-btn" class="btn-secondary" type="button">退出</button>
+                </div>
+
+                <div id="auth-actions" class="header-auth-actions">
+                    <button id="open-login-btn" class="btn-secondary" type="button">登录</button>
+                    <button id="open-register-btn" class="btn-primary" type="button">注册</button>
+                </div>
+            </div>
+        </header>
+
+        <section class="toolbar" aria-label="工具栏">
+            <div class="search-box">
+                <span class="search-icon" aria-hidden="true">&#x1F50D;</span>
+                <input id="search-input" type="search" placeholder="搜索 标题 / 内容 / 标签..." autocomplete="off">
+                <button id="clear-search-btn" class="btn-icon clear-search" type="button" aria-label="清空搜索">&times;</button>
+            </div>
+            <div class="toolbar-right">
+                <div class="segmented" role="tablist" aria-label="视图">
+                    <button id="view-my-btn" class="seg-btn" type="button" role="tab" aria-selected="false">我的</button>
+                    <button id="view-public-btn" class="seg-btn active" type="button" role="tab" aria-selected="true">公开</button>
+                </div>
+                <select id="sort-select" class="select" aria-label="排序">
+                    <option value="updated_desc">最近更新</option>
+                    <option value="created_desc">最新创建</option>
+                    <option value="created_asc">最早创建</option>
+                    <option value="title_asc">标题 A-Z</option>
+                </select>
+                <div id="note-count" class="note-count" aria-live="polite"></div>
+            </div>
+        </section>
+
+        <main id="notes-grid" class="notes-grid" aria-live="polite"></main>
+
+        <template id="empty-state-template">
+            <div class="empty-state">
+                <div class="empty-icon" aria-hidden="true">&#x1F4CC;</div>
+                <h2>这里还没有内容</h2>
+                <p>登录后创建你的第一条笔记，或切换到“公开”查看大家分享的内容。</p>
+            </div>
+        </template>
+
+        <template id="no-results-template">
+            <div class="empty-state">
+                <div class="empty-icon" aria-hidden="true">&#x1F50E;</div>
+                <h2>没有找到匹配内容</h2>
+                <p>换个关键词试试，或清空搜索。</p>
+            </div>
+        </template>
+
+        <div id="toast-container" class="toast-container" aria-live="polite" aria-atomic="true"></div>
+
+        <div id="note-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+            <div class="modal-content glass-panel">
+                <div class="modal-header">
+                    <div class="modal-title-row">
+                        <h2 id="modal-title">新建笔记</h2>
+                        <span id="modal-badge" class="badge hidden"></span>
+                    </div>
+                    <button id="close-modal-btn" class="btn-icon" type="button" aria-label="关闭">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="form-group">
+                        <label for="note-title">标题</label>
+                        <input id="note-title" type="text" maxlength="60" placeholder="可选：给笔记取个标题">
+                    </div>
+
+                    <div class="form-group">
+                        <label for="note-text">内容</label>
+                        <textarea id="note-text" placeholder="写下你的想法..." rows="7"></textarea>
+                        <div class="hint">快捷键：Ctrl/⌘ + Enter 保存</div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group grow">
+                            <label for="note-tags">标签</label>
+                            <input id="note-tags" type="text" placeholder="用逗号分隔，例如：想法, 工作, 读书">
+                            <div class="hint">保存后会自动整理标签</div>
+                        </div>
+                        <div class="form-group toggle-group">
+                            <label class="checkbox">
+                                <input id="note-pinned" type="checkbox">
+                                <span>置顶</span>
+                            </label>
+                            <label class="checkbox">
+                                <input id="note-public" type="checkbox">
+                                <span>公开</span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="media-upload-area" id="drop-zone" role="button" tabindex="0" aria-label="上传图片">
+                        <input type="file" id="image-upload" accept="image/*" hidden>
+                        <div class="upload-placeholder">
+                            <span class="icon" aria-hidden="true">&#x1F5BC;</span>
+                            <p>点击或拖拽上传图片（会自动压缩）</p>
+                        </div>
+                        <div id="image-preview-container" class="hidden">
+                            <img id="image-preview" src="" alt="预览图片">
+                            <button id="remove-image-btn" class="btn-xs" type="button">移除</button>
+                        </div>
+                    </div>
+
+                    <div class="color-picker">
+                        <label>颜色</label>
+                        <div class="color-options" role="radiogroup" aria-label="颜色">
+                            <button class="color-btn selected" data-color="#6C5CE7" style="background: #6C5CE7;" aria-label="紫色" type="button"></button>
+                            <button class="color-btn" data-color="#00CEC9" style="background: #00CEC9;" aria-label="青色" type="button"></button>
+                            <button class="color-btn" data-color="#FD79A8" style="background: #FD79A8;" aria-label="粉色" type="button"></button>
+                            <button class="color-btn" data-color="#FDCB6E" style="background: #FDCB6E;" aria-label="黄色" type="button"></button>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button id="delete-note-btn" class="btn-danger hidden" type="button">删除</button>
+                    <div class="spacer"></div>
+                    <button id="save-note-btn" class="btn-primary" type="button">保存</button>
+                </div>
+            </div>
+        </div>
+
+        <div id="auth-modal" class="modal-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="auth-modal-title">
+            <div class="modal-content glass-panel">
+                <div class="modal-header">
+                    <h2 id="auth-modal-title">登录</h2>
+                    <button id="close-auth-modal-btn" class="btn-icon" type="button" aria-label="关闭">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <div class="tabs" role="tablist" aria-label="登录注册">
+                        <button id="auth-tab-login" class="tab active" type="button" role="tab" aria-selected="true">登录</button>
+                        <button id="auth-tab-register" class="tab" type="button" role="tab" aria-selected="false">注册</button>
+                    </div>
+
+                    <div class="oauth-box">
+                        <button id="oauth-github-btn" class="btn-secondary full-width oauth-btn" type="button">使用 GitHub 登录</button>
+                        <div class="divider"><span>或使用邮箱</span></div>
+                    </div>
+
+                    <form id="auth-form" class="auth-form">
+                        <div id="auth-name-group" class="form-group hidden">
+                            <label for="auth-name">昵称</label>
+                            <input id="auth-name" type="text" maxlength="24" placeholder="例如：小王" autocomplete="nickname">
+                        </div>
+
+                        <div class="form-group">
+                            <label for="auth-email">邮箱</label>
+                            <input id="auth-email" type="email" placeholder="name@example.com" autocomplete="email" required>
+                        </div>
+
+                        <div class="form-group">
+                            <label for="auth-password">密码</label>
+                            <input id="auth-password" type="password" minlength="6" autocomplete="current-password" required>
+                            <div class="hint">至少 6 位</div>
+                        </div>
+
+                        <button id="auth-submit-btn" class="btn-primary full-width" type="submit">登录</button>
+                        <button id="resend-confirm-btn" class="btn-link hidden" type="button">重发验证邮件</button>
+                        <div id="auth-message" class="auth-message" aria-live="polite"></div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="scripts/app.js"></script>
+</body>
+</html>
